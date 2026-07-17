@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 /**
@@ -26,6 +28,15 @@ public class DeviceChooserDialog extends DialogWrapper {
         if (!devices.isEmpty()) {
             deviceList.setSelectedIndex(0);
         }
+        // 双击直接选中并确认
+        deviceList.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    doOKAction();
+                }
+            }
+        });
 
         init();
     }
@@ -38,8 +49,9 @@ public class DeviceChooserDialog extends DialogWrapper {
         return scrollPane;
     }
 
+    @Nullable
     @Override
-    protected JComponent createSouthPanel() {
+    protected JComponent createNorthPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
         panel.add(new JLabel("Select a target device for the HDC command."));
         return panel;
