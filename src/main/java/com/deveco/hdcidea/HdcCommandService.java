@@ -194,16 +194,33 @@ public class HdcCommandService {
      *
      * @return 设备序列号列表；如果无设备或 hdc 不可用则返回空列表
      */
+    /** 最近一次 listDevices() 失败的原因，null 表示无错误。用于 UI 给出具体提示。 */
+    @Nullable
+    private String lastDeviceListError = null;
+
+    /** 最近一次 listDevices() 失败的原因（找不到 hdc、命令执行失败等）。 */
+    @Nullable
+    public String getLastDeviceListError() {
+        return lastDeviceListError;
+    }
+
     @NotNull
     public List<String> listDevices() {
+        lastDeviceListError = null;
         String hdc = resolveHdcPath();
         if (hdc == null) {
+            lastDeviceListError = "未找到 hdc 可执行文件";
             return Collections.emptyList();
         }
         // hdc list targets 不需要指定设备（它就是列出所有设备）
         HdcCommandResult result = executeRaw(hdc, "list", "targets");
         if (!result.isSuccess()) {
-            LOG.warn("hdc list targets 执行失败: " + result.getStderr());
+            String err = result.getStderr();
+            if (err == null || err.isBlank()) {
+                err = result.getStdout();
+            }
+            lastDeviceListError = err;
+            LOG.warn("hdc list targets 执行失败: " + err);
             return Collections.emptyList();
         }
         List<String> devices = new ArrayList<>();

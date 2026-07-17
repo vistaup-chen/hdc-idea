@@ -155,6 +155,8 @@ public abstract class HdcAction extends AnAction {
 
     /**
      * 解析目标设备。
+     * - hdc 未配置 → 提示配置路径，返回 null
+     * - 命令执行失败 → 提示设备返回的具体错误，返回 null
      * - 0 台 → 提示无设备，返回 null
      * - 1 台 → 直接返回
      * - 多台 → 弹出选择框
@@ -166,8 +168,21 @@ public abstract class HdcAction extends AnAction {
         List<String> devices = hdcService.listDevices();
 
         if (devices.isEmpty()) {
-            HdcNotification.notifyWarning(project,
-                    "未连接鸿蒙设备。请连接设备后重试。");
+            // 区分"找不到 hdc"、"命令失败"、"真的没设备"三种情况
+            String err = hdcService.getLastDeviceListError();
+            if (err != null && !err.isBlank()) {
+                if (err.contains("未找到 hdc")) {
+                    HdcNotification.notifyError(project,
+                            "未找到 hdc 工具。请在 Settings > Tools > HDC Idea 中配置 hdc 路径，"
+                                    + "或将 hdc.exe 所在目录添加到系统 PATH。");
+                } else {
+                    HdcNotification.notifyError(project,
+                            "hdc list targets 执行失败。\n设备返回: " + truncate(err));
+                }
+            } else {
+                HdcNotification.notifyWarning(project,
+                        "未连接鸿蒙设备。请用 USB 连接设备，或执行 hdc tconn <IP:port> 连接网络设备后重试。");
+            }
             return null;
         }
         if (devices.size() == 1) {
@@ -179,6 +194,10 @@ public abstract class HdcAction extends AnAction {
             return dialog.getSelectedDevice();
         }
         return null; // 用户取消
+    }
+
+    private static String truncate(String s) {
+        return s.length() > 200 ? s.substring(0, 200) + "..." : s;
     }
 
     /**
