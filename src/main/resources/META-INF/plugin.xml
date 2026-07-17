@@ -1,0 +1,92 @@
+<idea-plugin>
+    <id>com.deveco.hdcidea</id>
+    <name>HDC Idea</name>
+    <vendor>DevEco Community</vendor>
+
+    <description><![CDATA[
+        A plugin for DevEco Studio that speeds up everyday HarmonyOS development
+        by providing quick access to frequently used HDC commands.<br><br>
+        Features: Uninstall App, Kill App, Start App, Restart App,
+        Clear App Data, Clear App Data and Restart, Grant Permissions, Revoke Permissions.
+    ]]></description>
+
+    <change-notes><![CDATA[
+        <b>1.0.0</b><br>
+        - Initial release with 8 HDC command shortcuts.
+    ]]></change-notes>
+
+    <idea-version since-build="232"/>
+
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <!-- Notification group for HDC command results -->
+        <notificationGroup id="HDC Idea"
+                           displayType="BALLOON"
+                           key="notification.group.hdc.idea"/>
+        <!-- Persistent settings for hdc path -->
+        <applicationService
+                serviceImplementation="com.deveco.hdcidea.HdcSettingsState"/>
+        <!-- Settings page under Tools -->
+        <applicationConfigurable
+                parentId="tools"
+                instance="com.deveco.hdcidea.HdcPathConfigurable"
+                id="com.deveco.hdcidea.HdcPathConfigurable"
+                displayName="HDC Idea"/>
+    </extensions>
+
+    <actions>
+        <!-- Quick-list popup bound to Shift+Ctrl+Alt+A (same as ADB Idea) -->
+        <action id="Hdcidea.QuickList"
+                class="com.deveco.hdcidea.actions.HdcQuickListAction"
+                text="HDC Operations Popup..."
+                description="List all HDC Idea operations in a popup">
+            <keyboard-shortcut first-keystroke="shift ctrl alt A" keymap="$default"/>
+            <add-to-group group-id="ToolbarRunGroup" anchor="last"/>
+        </action>
+
+        <group id="Hdcidea.MainGroup"
+               text="HDC Idea"
+               description="Quick access to HDC commands"
+               popup="true"
+               icon="/icons/hdc.svg">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <add-to-group group-id="ToolbarRunGroup" anchor="last"/>
+            <add-to-group group-id="EditorPopupMenu" anchor="last"/>
+
+            <action id="Hdcidea.Uninstall"
+                    class="com.deveco.hdcidea.actions.HdcUninstallAction"
+                    text="Uninstall App"
+                    description="Uninstall the app from the device"/>
+            <action id="Hdcidea.Kill"
+                    class="com.deveco.hdcidea.actions.HdcKillAction"
+                    text="Kill App"
+                    description="Force-stop the running app"/>
+            <action id="Hdcidea.Start"
+                    class="com.deveco.hdcidea.actions.HdcStartAction"
+                    text="Start App"
+                    description="Launch the app"/>
+            <action id="Hdcidea.Restart"
+                    class="com.deveco.hdcidea.actions.HdcRestartAction"
+                    text="Restart App"
+                    description="Kill and relaunch the app"/>
+            <action id="Hdcidea.ClearData"
+                    class="com.deveco.hdcidea.actions.HdcClearDataAction"
+                    text="Clear App Data"
+                    description="Wipe app data without uninstalling"/>
+            <action id="Hdcidea.ClearDataRestart"
+                    class="com.deveco.hdcidea.actions.HdcClearDataAndRestartAction"
+                    text="Clear App Data and Restart"
+                    description="Clear data and relaunch the app"/>
+            <action id="Hdcidea.GrantPerm"
+                    class="com.deveco.hdcidea.actions.HdcGrantPermissionAction"
+                    text="Grant Permissions"
+                    description="Grant runtime permissions"/>
+            <action id="Hdcidea.RevokePerm"
+                    class="com.deveco.hdcidea.actions.HdcRevokePermissionAction"
+                    text="Revoke Permissions"
+                    description="Revoke runtime permissions"/>
+        </group>
+    </actions>
+</idea-plugin>

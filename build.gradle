@@ -1,0 +1,50 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        classpath 'org.jetbrains.intellij:org.jetbrains.intellij.gradle.plugin:1.17.4'
+    }
+}
+
+apply plugin: 'java'
+apply plugin: org.jetbrains.intellij.IntelliJPlugin
+
+group = 'com.deveco'
+
+// 每次构建自动附加时间戳到版本号，产物名形如 hdc-idea-1.0.0-20260717-163045.zip
+// 方便开发者区分不同时间打出的包
+version = '1.0.0-' + new Date().format('yyyyMMdd-HHmmss')
+
+repositories {
+    mavenCentral()
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+}
+
+intellij {
+    // Compile against platform 2023.2 (cached locally).
+    // sinceBuild/untilBuild below declare compatibility with DevEco 243+.
+    version = '2023.2'
+    type = 'IC'
+    plugins = []
+}
+
+tasks.withType(JavaCompile) {
+    sourceCompatibility = '17'
+    targetCompatibility = '17'
+}
+
+patchPluginXml {
+    sinceBuild = '243'
+    untilBuild = '251.*'
+}
+
+runIde {
+    // Optionally point to DevEco Studio instead of IntelliJ IC
+    // ideDir = file('C:/Program Files/DevEco Studio/bin')
+}
