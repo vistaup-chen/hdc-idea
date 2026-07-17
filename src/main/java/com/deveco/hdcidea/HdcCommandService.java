@@ -286,19 +286,42 @@ public class HdcCommandService {
      *
      * 执行命令：hdc -t <device> shell aa start -b <bundleName> -a <abilityName>
      *
+     * 如果 abilityName 为空，则不带 -a 参数，让设备按 module.json5 的
+     * mainElement 自动解析入口 Ability。
+     *
      * aa（App Aid / Application Assistant）是鸿蒙的应用管理工具，
      * 类似 Android 的 am（Activity Manager），但命令语法不同。
      *
      * @param device     目标设备序列号
      * @param bundleName 应用包名
-     * @param abilityName Ability 名称（如 EntryAbility）
+     * @param abilityName Ability 名称（如 EntryAbility），可为空
      * @return 命令结果
      */
     @NotNull
     public HdcCommandResult startApp(@NotNull String device,
                                     @NotNull String bundleName,
                                     @NotNull String abilityName) {
+        if (abilityName == null || abilityName.isBlank()) {
+            return execute(device, "shell", "aa", "start", "-b", bundleName);
+        }
         return execute(device, "shell", "aa", "start", "-b", bundleName, "-a", abilityName);
+    }
+
+    /**
+     * 判断命令失败是否与 Ability 名称不正确有关。
+     * 用于启动失败时决定是否弹出输入框让用户手输正确的 Ability。
+     *
+     * @param result 命令结果
+     * @return true 表示错误看起来是 ability 相关
+     */
+    public static boolean isAbilityError(@NotNull HdcCommandResult result) {
+        String err = result.getOutput().toLowerCase();
+        if (!err.contains("ability")) {
+            return false;
+        }
+        return err.contains("not found") || err.contains("no such")
+                || err.contains("cannot find") || err.contains("does not exist")
+                || err.contains("not exist") || err.contains("invalid");
     }
 
     /**

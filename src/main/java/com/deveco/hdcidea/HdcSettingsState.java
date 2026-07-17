@@ -23,6 +23,9 @@ public class HdcSettingsState implements PersistentStateComponent<HdcSettingsSta
     /** Last-used bundle name, remembered across actions. */
     public String bundleName = "";
 
+    /** Last-used ability name, remembered across start/restart actions. */
+    public String abilityName = "";
+
     public static HdcSettingsState getInstance() {
         return ApplicationManager.getApplication().getService(HdcSettingsState.class);
     }
@@ -37,5 +40,6 @@ public class HdcSettingsState implements PersistentStateComponent<HdcSettingsSta
     public void loadState(@NotNull HdcSettingsState state) {
         this.hdcPath = state.hdcPath;
         this.bundleName = state.bundleName;
+        this.abilityName = state.abilityName;
     }
 }

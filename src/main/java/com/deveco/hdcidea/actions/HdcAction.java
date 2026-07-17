@@ -99,26 +99,58 @@ public abstract class HdcAction extends AnAction {
         return null;
     }
 
+    /** 未检测到 ability 时的默认值（鸿蒙工程默认入口） */
+    protected static final String DEFAULT_ABILITY_NAME = "EntryAbility";
+
     /**
-     * 解析要启动的 Ability 名称。
-     * 优先使用自动检测到的，否则弹出输入框。
+     * 解析要启动的 Ability 名称，按以下优先级：
+     *   1. 自动检测到的（来自工程 module.json5）
+     *   2. 上次使用的（设置中记忆）
+     *   3. 默认值 EntryAbility（静默使用，不弹窗）
      *
-     * @return Ability 名称，或 null 如果用户取消
+     * 检测失败时不弹窗阻塞，由调用方在启动失败且错误与 ability 有关时再提示。
+     *
+     * @return Ability 名称（永不为 null）
      */
-    @Nullable
+    @NotNull
     protected String resolveAbilityName(@NotNull Project project,
                                         @Nullable ProjectDetector.AppIdentity identity) {
+        // 优先使用自动检测到的，并记住
         if (identity != null && identity.abilityName != null && !identity.abilityName.isBlank()) {
+            HdcSettingsState.getInstance().abilityName = identity.abilityName;
             return identity.abilityName;
         }
+        // 退到上次使用的
+        String lastUsed = HdcSettingsState.getInstance().abilityName;
+        if (lastUsed != null && !lastUsed.isBlank()) {
+            return lastUsed;
+        }
+        // 都没有，静默使用默认值
+        return DEFAULT_ABILITY_NAME;
+    }
+
+    /**
+     * 启动失败后，若错误与 ability 有关，弹出输入框让用户手输正确的 Ability。
+     * 输入后自动记住，下次不再弹。
+     *
+     * @return 用户输入的 Ability 名称，或 null 如果用户取消
+     */
+    @Nullable
+    protected String promptAbilityNameOnFailure(@NotNull Project project, @NotNull String currentAbility) {
         String input = Messages.showInputDialog(
                 project,
-                "未检测到 Ability 名称。请输入（如 EntryAbility）：",
-                "输入 Ability",
-                Messages.getQuestionIcon(),
-                "EntryAbility",
-                null);
-        return (input != null && !input.isBlank()) ? input.trim() : null;
+                "启动失败，Ability 名称可能不正确（当前用的是 \"" + currentAbility + "\"）。\n"
+                        + "请输入正确的 Ability 名称：",
+                    "启动失败 - 输入 Ability",
+                    Messages.getWarningIcon(),
+                    currentAbility,
+                    null);
+        if (input != null && !input.isBlank() && !input.trim().equals(currentAbility)) {
+            String trimmed = input.trim();
+            HdcSettingsState.getInstance().abilityName = trimmed;
+            return trimmed;
+        }
+        return null;
     }
 
     /**

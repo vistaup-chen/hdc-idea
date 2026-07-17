@@ -8,8 +8,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,9 +25,13 @@ import java.util.regex.Pattern;
 public class ProjectDetector {
 
     private static final Pattern BUNDLE_NAME_PATTERN =
-            Pattern.compile("\"bundleName\"\\s*:\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("['\"]bundleName['\"]\\s*:\\s*['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
+    /** 匹配 abilities 数组起始（引号无关，兼容 JSON5 单引号） */
+    private static final Pattern ABILITIES_SECTION_PATTERN =
+            Pattern.compile("['\"]abilities['\"]\\s*:");
+    /** 匹配 ability 的 name 字段（引号无关） */
     private static final Pattern ABILITY_NAME_PATTERN =
-            Pattern.compile("\"name\"\\s*:\\s*\"([^\"]+)\"", Pattern.CASE_INSENSITIVE);
+            Pattern.compile("['\"]name['\"]\\s*:\\s*['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
 
     /**
      * Holds the detected app identity.
@@ -140,19 +142,31 @@ public class ProjectDetector {
      */
     @Nullable
     private static String findAbilityName(String basePath, VirtualFile baseDir) {
-        // First try: look in known module directories via VFS
-        String ability = null;
+        // 遍历所有 module.json(5)，按文件树顺序取首个能解析出 ability 的文件。
+        // 深度 10 覆盖绝大多数工程结构；不再硬推 entry 模块，避免非标模块名被跳过。
+        final String[] found = {null};
         try {
-            List<Path> moduleFiles = new ArrayList<>();
-            Files.walkFileTree(Paths.get(basePath), java.util.EnumSet.noneOf(java.nio.file.FileVisitOption.class), 6,
+            Files.walkFileTree(Paths.get(basePath), java.util.EnumSet.noneOf(java.nio.file.FileVisitOption.class), 10,
                     new SimpleFileVisitor<Path>() {
                         @Override
                         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                            if (found[0] != null) {
+                                return FileVisitResult.TERMINATE;
+                            }
                             String name = file.getFileName().toString();
                             if (name.equals("module.json5") || name.equals("module.json")) {
                                 String pathStr = file.toString().replace('\\', '/');
                                 if (pathStr.contains("/src/main/")) {
-                                    moduleFiles.add(file);
+                                    try {
+                                        String content = new String(Files.readAllBytes(file), StandardCharsets.UTF_8);
+                                        String ability = extractAbilityName(content);
+                                        if (ability != null) {
+                                            found[0] = ability;
+                                            return FileVisitResult.TERMINATE;
+                                        }
+                                    } catch (IOException e) {
+                                        // ignore and continue
+                                    }
                                 }
                             }
                             return FileVisitResult.CONTINUE;
@@ -163,26 +177,10 @@ public class ProjectDetector {
                             return FileVisitResult.CONTINUE;
                         }
                     });
-            // Prefer files in an "entry" module, then take the first one
-            Path best = null;
-            for (Path p : moduleFiles) {
-                String pathStr = p.toString().replace('\\', '/');
-                if (pathStr.contains("/entry/")) {
-                    best = p;
-                    break;
-                }
-            }
-            if (best == null && !moduleFiles.isEmpty()) {
-                best = moduleFiles.get(0);
-            }
-            if (best != null) {
-                String content = new String(Files.readAllBytes(best), StandardCharsets.UTF_8);
-                ability = extractAbilityName(content);
-            }
         } catch (IOException e) {
             // ignore
         }
-        return ability;
+        return found[0];
     }
 
     @Nullable
@@ -196,11 +194,11 @@ public class ProjectDetector {
 
     @Nullable
     private static String extractAbilityName(String content) {
-        int abilitiesIdx = content.indexOf("\"abilities\"");
-        if (abilitiesIdx < 0) {
+        Matcher section = ABILITIES_SECTION_PATTERN.matcher(content);
+        if (!section.find()) {
             return null;
         }
-        Matcher m = ABILITY_NAME_PATTERN.matcher(content.substring(abilitiesIdx));
+        Matcher m = ABILITY_NAME_PATTERN.matcher(content.substring(section.start()));
         if (m.find()) {
             return m.group(1);
         }
