@@ -9,8 +9,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 清除应用数据并重启
  *
- *   1. hdc -t <device> shell bm clean -n <bundleName> -c -d
- *   2. hdc -t <device> shell aa start -b <bundleName> -a <abilityName>
+ *   1. hdc -t <device> shell bm clean -n <bundleName> -d
+ *   2. hdc -t <device> shell aa force-stop <bundleName>
+ *   3. hdc -t <device> shell aa start -b <bundleName> -a <abilityName>
  */
 public class HdcClearDataAndRestartAction extends HdcAction {
 
@@ -33,9 +34,12 @@ public class HdcClearDataAndRestartAction extends HdcAction {
         if (!clearResult.isSuccess()) {
             notifyResult(project, device, clearResult,
                     "清除数据失败 " + bundleName,
-                    "shell", "bm", "clean", "-n", bundleName, "-c", "-d");
+                    "shell", "bm", "clean", "-n", bundleName, "-d");
             return true;
         }
+
+        // 强杀应用，确保清理彻底生效
+        hdcService.stopApp(device, bundleName);
 
         // 启动
         HdcCommandResult startResult = hdcService.startApp(device, bundleName, abilityName);

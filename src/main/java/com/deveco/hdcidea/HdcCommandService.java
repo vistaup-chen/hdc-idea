@@ -31,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * 注意：鸿蒙的很多命令语法与 Android ADB 不同：
  * - 启动应用：hdc shell aa start -b <bundle> -a <ability>  （不是 am start）
  * - 停止应用：hdc shell aa force-stop <bundle>           （不是 am force-stop）
- * - 清除数据：hdc shell bm clean -n <bundle> -c -d         （bm 不是 pm）
+ * - 清除数据：hdc shell bm clean -n <bundle> -d            （bm 不是 pm）
  *
  * @see HdcCommandResult
  * @see HdcSettingsState
@@ -325,12 +325,11 @@ public class HdcCommandService {
     /**
      * 清除应用的缓存和数据。
      *
-     * 执行命令：hdc -t <device> shell bm clean -n <bundleName> -c -d
+     * 执行命令：hdc -t <device> shell bm clean -n <bundleName> -d
      *
      * bm（Bundle Manager）是鸿蒙的包管理工具，类似 Android 的 pm。
      * -n 指定包名
-     * -c 清除缓存（cache）
-     * -d 清除数据（data）
+     * -d 清除数据（data）和缓存（cache）
      *
      * @param device     目标设备序列号
      * @param bundleName 应用包名
@@ -338,7 +337,7 @@ public class HdcCommandService {
      */
     @NotNull
     public HdcCommandResult clearAppData(@NotNull String device, @NotNull String bundleName) {
-        return execute(device, "shell", "bm", "clean", "-n", bundleName, "-c", "-d");
+        return execute(device, "shell", "bm", "clean", "-n", bundleName, "-d");
     }
 
     // ========================================================================

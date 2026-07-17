@@ -9,11 +9,10 @@ import org.jetbrains.annotations.Nullable;
 /**
  * 清除应用数据
  *
- * 执行命令：hdc -t <device> shell bm clean -n <bundleName> -c -d
+ * 执行命令：hdc -t <device> shell bm clean -n <bundleName> -d
  *
  * bm = Bundle Manager（鸿蒙包管理工具）
- * -c = 清除缓存（cache）
- * -d = 清除数据（data）
+ * -d = 清除数据（data）和缓存（cache）
  */
 public class HdcClearDataAction extends HdcAction {
 
@@ -33,7 +32,7 @@ public class HdcClearDataAction extends HdcAction {
 
         notifyResult(project, device, result,
                 "清除数据 " + bundleName,
-                "shell", "bm", "clean", "-n", bundleName, "-c", "-d");
+                "shell", "bm", "clean", "-n", bundleName, "-d");
         return true;
     }
 }
