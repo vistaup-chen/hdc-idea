@@ -2,6 +2,7 @@ package com.deveco.hdcidea.actions;
 
 import com.deveco.hdcidea.HdcCommandResult;
 import com.deveco.hdcidea.HdcCommandService;
+import com.deveco.hdcidea.HdcNotification;
 import com.deveco.hdcidea.ProjectDetector;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -28,8 +29,16 @@ public class HdcRestartAction extends HdcAction {
         if (bundleName == null) return false;
         String abilityName = resolveAbilityName(project, identity);
 
-        // 停止
-        hdcService.stopApp(device, bundleName);
+        // 停止 —— 失败要明确告知用户，不能静默吞掉
+        HdcCommandResult stopResult = hdcService.stopApp(device, bundleName);
+        if (!stopResult.isSuccess()) {
+            HdcNotification.notifyError(project,
+                    "停止 " + bundleName + " @ " + device + " 失败 (exit=" + stopResult.getExitCode() + ")\n"
+                            + "命令: " + hdcService.getCommandString(device,
+                                    "shell", "aa", "force-stop", bundleName) + "\n"
+                            + "设备返回: " + stopResult.getOutput());
+            return true;
+        }
         // 启动
         HdcCommandResult result = hdcService.startApp(device, bundleName, abilityName);
 

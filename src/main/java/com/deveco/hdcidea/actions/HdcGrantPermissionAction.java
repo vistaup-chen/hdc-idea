@@ -35,7 +35,10 @@ public class HdcGrantPermissionAction extends HdcAction {
                 "请输入权限名（如 ohos.permission.CAMERA）：",
                 "授予权限",
                 Messages.getQuestionIcon());
-        if (permission == null || permission.isBlank()) return false;
+        if (permission == null || permission.isBlank()) {
+            HdcNotification.notifyInfo(project, "已取消：未输入权限名。");
+            return false;
+        }
 
         String permTrimmed = permission.trim();
         HdcCommandResult result = hdcService.execute(device,
@@ -67,6 +70,6 @@ public class HdcGrantPermissionAction extends HdcAction {
     }
 
     private String truncate(String s) {
-        return s.length() > 200 ? s.substring(0, 200) + "..." : s;
+        return s.length() > 2000 ? s.substring(0, 2000) + "..." : s;
     }
 }

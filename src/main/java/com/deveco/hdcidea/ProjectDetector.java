@@ -1,5 +1,6 @@
 package com.deveco.hdcidea;
 
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import org.jetbrains.annotations.Nullable;
@@ -23,6 +24,8 @@ import java.util.regex.Pattern;
  * module.json5.
  */
 public class ProjectDetector {
+
+    private static final Logger LOG = Logger.getInstance(ProjectDetector.class);
 
     private static final Pattern BUNDLE_NAME_PATTERN =
             Pattern.compile("['\"]bundleName['\"]\\s*:\\s*['\"]([^'\"]+)['\"]", Pattern.CASE_INSENSITIVE);
@@ -82,7 +85,7 @@ public class ProjectDetector {
                 String content = new String(appJson5.contentsToByteArray(), StandardCharsets.UTF_8);
                 bundleName = extractBundleName(content);
             } catch (IOException e) {
-                // ignore
+                LOG.warn("读取 AppScope/app.json5 失败", e);
             }
         }
 
@@ -120,7 +123,7 @@ public class ProjectDetector {
                                         return FileVisitResult.TERMINATE;
                                     }
                                 } catch (IOException e) {
-                                    // ignore
+                                    LOG.warn("读取 " + file + " 失败", e);
                                 }
                             }
                             return FileVisitResult.CONTINUE;
@@ -132,7 +135,7 @@ public class ProjectDetector {
                         }
                     });
         } catch (IOException e) {
-            // ignore
+            LOG.warn("遍历工程目录搜索 app.json5 失败", e);
         }
         return found[0];
     }
@@ -165,7 +168,7 @@ public class ProjectDetector {
                                             return FileVisitResult.TERMINATE;
                                         }
                                     } catch (IOException e) {
-                                        // ignore and continue
+                                        LOG.warn("读取 " + file + " 失败", e);
                                     }
                                 }
                             }
@@ -178,7 +181,7 @@ public class ProjectDetector {
                         }
                     });
         } catch (IOException e) {
-            // ignore
+            LOG.warn("遍历工程目录搜索 module.json5 失败", e);
         }
         return found[0];
     }

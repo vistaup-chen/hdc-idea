@@ -96,6 +96,8 @@ public abstract class HdcAction extends AnAction {
             HdcSettingsState.getInstance().bundleName = input.trim();
             return input.trim();
         }
+        // 用户取消输入 —— 给个轻量反馈，区别于真正的错误
+        HdcNotification.notifyInfo(project, "已取消：未输入包名。");
         return null;
     }
 
@@ -219,14 +221,14 @@ public abstract class HdcAction extends AnAction {
                                 @NotNull HdcCommandResult result,
                                 @NotNull String operation,
                                 String @NotNull ... args) {
-        // 截断过长的输出
+        // 截断过长的输出（保留更多内容，2000 字符对 balloon 通知足够）
         String output = result.getOutput();
-        if (output.length() > 200) {
-            output = output.substring(0, 200) + "...";
+        if (output.length() > 2000) {
+            output = output.substring(0, 2000) + "...";
         }
-        // 拼接完整命令字符串
+        // 拼接完整命令字符串，含退出码方便定位
         String cmdStr = hdcService.getCommandString(device, args);
-        String fullMsg = operation + " @ " + device + "\n"
+        String fullMsg = operation + " @ " + device + " (exit=" + result.getExitCode() + ")\n"
                 + "命令: " + cmdStr + "\n"
                 + "输出: " + output;
 

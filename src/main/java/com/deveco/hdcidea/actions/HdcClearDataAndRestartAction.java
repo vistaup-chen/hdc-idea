@@ -1,6 +1,7 @@
 package com.deveco.hdcidea.actions;
 
 import com.deveco.hdcidea.HdcCommandResult;
+import com.deveco.hdcidea.HdcNotification;
 import com.deveco.hdcidea.ProjectDetector;
 import com.intellij.openapi.project.Project;
 import org.jetbrains.annotations.NotNull;
@@ -38,8 +39,16 @@ public class HdcClearDataAndRestartAction extends HdcAction {
             return true;
         }
 
-        // 强杀应用，确保清理彻底生效
-        hdcService.stopApp(device, bundleName);
+        // 强杀应用，确保清理彻底生效 —— 失败要明确告知
+        HdcCommandResult stopResult = hdcService.stopApp(device, bundleName);
+        if (!stopResult.isSuccess()) {
+            HdcNotification.notifyError(project,
+                    "清除数据成功，但停止 " + bundleName + " @ " + device + " 失败 (exit=" + stopResult.getExitCode() + ")\n"
+                            + "命令: " + hdcService.getCommandString(device,
+                                    "shell", "aa", "force-stop", bundleName) + "\n"
+                            + "设备返回: " + stopResult.getOutput());
+            return true;
+        }
 
         // 启动
         HdcCommandResult startResult = hdcService.startApp(device, bundleName, abilityName);

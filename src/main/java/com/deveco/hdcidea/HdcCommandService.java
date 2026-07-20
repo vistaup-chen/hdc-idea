@@ -251,6 +251,7 @@ public class HdcCommandService {
     public List<String> listPids(@NotNull String device) {
         HdcCommandResult result = execute(device, "jpid");
         if (!result.isSuccess()) {
+            LOG.warn("jpid 执行失败 @" + device + " (exit=" + result.getExitCode() + "): " + result.getOutput());
             return Collections.emptyList();
         }
         List<String> pids = new ArrayList<>();
@@ -279,7 +280,12 @@ public class HdcCommandService {
         // ps -A 列出所有进程；输出格式：USER PID PPID VSIZE RSS WCHAN PC NAME
         HdcCommandResult result = execute(device, "shell", "ps", "-A");
         if (!result.isSuccess()) {
+            LOG.warn("ps -A 执行失败 @" + device + "，退到 ps (exit=" + result.getExitCode() + "): " + result.getOutput());
             result = execute(device, "shell", "ps");
+            if (!result.isSuccess()) {
+                LOG.warn("ps 也失败 @" + device + " (exit=" + result.getExitCode() + "): " + result.getOutput());
+                return Collections.emptyList();
+            }
         }
         List<String> pids = new ArrayList<>();
         for (String line : result.getStdout().split("\\r?\\n")) {
