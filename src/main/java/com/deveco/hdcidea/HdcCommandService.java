@@ -348,15 +348,31 @@ public class HdcCommandService {
         List<String> devices = new ArrayList<>();
         for (String line : result.getStdout().split("\\r?\\n")) {
             String trimmed = line.trim();
-            if (!trimmed.isEmpty()) {
-                // 每行是一个序列号，可能后跟空格+状态（如 "-1"）
+            // 跳过空行、hdc 的 debug 日志行（如 "[D][2026-07-17 ..."）
+            if (!trimmed.isEmpty() && isLikelyDeviceSerial(trimmed)) {
+                // 每行是一个序列号，可能后跟空格+状态（如 "device"、"offline"）
                 String serial = trimmed.split("\\s+")[0];
-                if (!serial.isEmpty()) {
-                    devices.add(serial);
-                }
+                devices.add(serial);
             }
         }
         return devices;
+    }
+
+    /**
+     * 粗略判断一行输出是否可能是鸿蒙设备的序列号。
+     *
+     * <p>过滤掉 hdc 打印的 debug 日志（形如 {@code [D][2026-07-17 17:14:04.619][9274] ...}）
+     * 和多行分隔线等噪音。设备序列号通常为：
+     * <ul>
+     *   <li>纯数字+字母（USB 设备，如 {@code 2MH0224723022348}）</li>
+     *   <li>IPv4:端口（如 {@code 192.168.1.100:5555}、{@code 127.0.0.1:5555}）</li>
+     * </ul>
+     */
+    private boolean isLikelyDeviceSerial(@NotNull String trimmed) {
+        String first = trimmed.split("\\s+")[0];
+        // 去掉冒号和点后应该全是数字或字母
+        String stripped = first.replaceAll("[.:]", "");
+        return !stripped.isEmpty() && stripped.matches("[A-Za-z0-9]+");
     }
 
     /**

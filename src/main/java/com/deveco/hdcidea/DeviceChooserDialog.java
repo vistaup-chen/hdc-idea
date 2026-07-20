@@ -20,7 +20,7 @@ public class DeviceChooserDialog extends DialogWrapper {
 
     public DeviceChooserDialog(List<String> devices) {
         super(true); // use current window as parent
-        setTitle("Select Device");
+        setTitle("选择设备");
         setResizable(false);
 
         deviceList = new JBList<>(devices.toArray(new String[0]));
@@ -53,8 +53,16 @@ public class DeviceChooserDialog extends DialogWrapper {
     @Override
     protected JComponent createNorthPanel() {
         JPanel panel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panel.add(new JLabel("Select a target device for the HDC command."));
+        panel.add(new JLabel("请选择要执行 HDC 命令的目标设备："));
         return panel;
+    }
+
+    @Override
+    protected void createDefaultActions() {
+        super.createDefaultActions();
+        // 把 DialogWrapper 默认的 OK / Cancel 按钮文字改为中文
+        myOKAction.putValue(Action.NAME, "确定");
+        myCancelAction.putValue(Action.NAME, "取消");
     }
 
     /**
